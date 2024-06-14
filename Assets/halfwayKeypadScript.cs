@@ -133,21 +133,58 @@ public class halfwayKeypadScript : MonoBehaviour {
         return output;
     }
 
-    void ButtonPress(KMSelectable Button) { //DO FANCY ANIMATIONS LATER, AND BETTER LOGGING FOR PRESSES I GUESS, OH AND SFX!!!
+    void ButtonPress(KMSelectable Button) {
         for (int b = 0; b < 4; b++) {
             if (Button == Buttons[b]) {
                 if (pressed[b]) { return; }
+                Button.AddInteractionPunch(1f);
                 if (correctOrder[amountPressed] == b) {
-                    LEDs[b].material = Mats[2];
+                    Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, Button.transform);
+                    pressed[b] = true;
                     amountPressed++;
+                    StartCoroutine(CorrectPress(b));
+                    Debug.LogFormat("[Halfway Keypad #{0}] Pressed {1}, that's correct.", moduleId, forLogging[b]);
                     if (amountPressed == 3) {
                         Module.HandlePass();
+                        Debug.LogFormat("[Halfway Keypad #{0}] All buttons pressed, module solved.", moduleId);
                     }
                 } else {
-                    LEDs[b].material = Mats[1];
-                    Module.HandleStrike();
+                    Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.BigButtonPress, Button.transform);
+                    StartCoroutine(IncorrectPress(b));
+                    Debug.LogFormat("[Halfway Keypad #{0}] Pressed {1}, that's incorrect, strike!", moduleId, forLogging[b]);
                 }
             }
+        }
+    }
+
+    /* These corountines were largely inspired by tandyCake's Keypad Magnified code */
+
+    IEnumerator CorrectPress(int b) {
+        while (Objects[b].transform.localPosition.y > -0.01) {
+            Objects[b].transform.localPosition -= new Vector3(0, 0.0015f, 0);
+            yield return null;
+        }
+        LEDs[b].material = Mats[2];
+        yield return null;
+    }
+
+    IEnumerator IncorrectPress(int b) {
+        StartCoroutine(IncorrectBounce(b));
+        Module.HandleStrike();
+        LEDs[b].material = Mats[1];
+        yield return new WaitForSecondsRealtime(1f);
+        LEDs[b].material = Mats[0];
+        yield return null;
+    }
+
+    IEnumerator IncorrectBounce(int b) {
+        while (Objects[b].transform.localPosition.y > -0.005) {
+            Objects[b].transform.localPosition -= new Vector3(0, 0.00075f, 0);
+            yield return null;
+        }
+        while (Objects[b].transform.localPosition.y < 0) {
+            Objects[b].transform.localPosition += new Vector3(0, 0.00075f, 0);
+            yield return null;
         }
     }
 }
