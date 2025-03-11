@@ -173,7 +173,7 @@ public class halfwayKeypadScript : MonoBehaviour {
         Module.HandleStrike();
         LEDs[b].material = Mats[1];
         yield return new WaitForSecondsRealtime(1f);
-        LEDs[b].material = Mats[0];
+        LEDs[b].material = Mats[pressed[b] ? 2 : 0];
         yield return null;
     }
 
